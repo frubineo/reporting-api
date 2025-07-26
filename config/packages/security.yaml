@@ -1,0 +1,250 @@
+security:
+    enable_authenticator_manager: true
+    
+    # 📊 HIÉRARCHIE DES RÔLES BUSINESS INTELLIGENCE
+    role_hierarchy:
+        ROLE_USER:                []
+        ROLE_BI_VIEWER:           [ROLE_USER]
+        ROLE_BI_ANALYST:          [ROLE_USER, ROLE_BI_VIEWER]
+        ROLE_BI_BUILDER:          [ROLE_USER, ROLE_BI_ANALYST]
+        ROLE_BI_ADMIN:            [ROLE_USER, ROLE_BI_BUILDER]
+        ROLE_EXECUTIVE_VIEWER:    [ROLE_USER, ROLE_BI_VIEWER]
+        ROLE_DASHBOARD_MANAGER:   [ROLE_USER, ROLE_BI_BUILDER]
+        ROLE_REPORT_SCHEDULER:    [ROLE_USER, ROLE_BI_ANALYST]
+        ROLE_DATA_GOVERNOR:       [ROLE_USER, ROLE_BI_ADMIN]
+        ROLE_COMPLIANCE_AUDITOR:  [ROLE_USER, ROLE_BI_VIEWER]
+        ROLE_KPI_ANALYST:         [ROLE_USER, ROLE_BI_ANALYST]
+        ROLE_CHART_DESIGNER:      [ROLE_USER, ROLE_BI_BUILDER]
+        ROLE_EXPORT_MANAGER:      [ROLE_USER, ROLE_BI_ANALYST]
+        ROLE_REALTIME_MONITOR:    [ROLE_USER, ROLE_BI_VIEWER]
+        ROLE_API_CONSUMER:        [ROLE_USER]
+        ROLE_WEBHOOK_RECEIVER:    [ROLE_SYSTEM]
+        ROLE_ETL_AGENT:           [ROLE_SYSTEM] # 🆕 Rôle pour agents ETL
+        ROLE_CUBE_BUILDER:        [ROLE_SYSTEM] # 🆕 Rôle pour construction cubes OLAP
+        ROLE_DATA_SYNC_AGENT:     [ROLE_SYSTEM] # 🆕 Rôle pour synchronisation données
+        ROLE_ADMIN:               [ROLE_USER, ROLE_BI_ADMIN, ROLE_DASHBOARD_MANAGER, ROLE_DATA_GOVERNOR]
+        ROLE_SUPER_ADMIN:         [ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH]
+        ROLE_SYSTEM:              [ROLE_ADMIN]
+        ROLE_SECURITY:            [ROLE_SUPER_ADMIN] # 🆕 Rôle sécurité dédié
+
+    # 🔑 HASHAGE ULTRA-SÉCURISÉ
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+            algorithm: 'sodium' # 🆕 Sodium vs bcrypt
+            migrate_from: ['bcrypt']
+
+    # 👥 PROVIDERS D'AUTHENTIFICATION BI
+    providers:
+        jwt_users:
+            jwt: ~
+        security_api_users:
+            entity:
+                class: ReportingApi\Infrastructure\Security\SecurityApiUser
+                property: email
+        reporting_api_users:
+            entity:
+                class: ReportingApi\Infrastructure\Security\ReportingApiUser
+                property: email
+        webhook_users:
+            memory:
+                users:
+                    webhook_receiver: { password: '%env(WEBHOOK_RECEIVER_SECRET)%', roles: [ROLE_WEBHOOK_RECEIVER] }
+        etl_agent_users:
+            memory:
+                users:
+                    etl_agent: { password: '%env(ETL_AGENT_SECRET)%', roles: [ROLE_ETL_AGENT] }
+        cube_builder_users:
+            memory:
+                users:
+                    cube_builder: { password: '%env(CUBE_BUILDER_SECRET)%', roles: [ROLE_CUBE_BUILDER] }
+        data_sync_users:
+            memory:
+                users:
+                    data_sync: { password: '%env(DATA_SYNC_SECRET)%', roles: [ROLE_DATA_SYNC_AGENT] }
+        system_users:
+            memory:
+                users:
+                    system_reporting: { password: '%env(SYSTEM_REPORTING_SECRET)%', roles: [ROLE_SYSTEM] }
+
+    # 🛡️ FIREWALLS SÉCURISÉS BI
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        # 🏥 Health Checks - Accès libre
+        health:
+            pattern: ^/(health|ready|metrics)
+            security: false
+
+        # 🔄 Agents ETL - Authentification spécialisée
+        etl:
+            pattern: ^/api/v1/etl
+            stateless: true
+            custom_authenticators:
+                - ReportingApi\Infrastructure\Security\ETLAgentAuthenticator
+            entry_point: ReportingApi\Infrastructure\Security\ETLAgentAuthenticator
+
+        # 📊 Construction cubes OLAP - Protection ultra-stricte
+        cubes:
+            pattern: ^/api/v1/cubes
+            stateless: true
+            custom_authenticators:
+                - ReportingApi\Infrastructure\Security\CubeBuilderAuthenticator
+            entry_point: ReportingApi\Infrastructure\Security\CubeBuilderAuthenticator
+
+        # 🔄 Synchronisation données - Authentification stricte
+        sync:
+            pattern: ^/api/v1/sync
+            stateless: true
+            custom_authenticators:
+                - ReportingApi\Infrastructure\Security\DataSyncAuthenticator
+            entry_point: ReportingApi\Infrastructure\Security\DataSyncAuthenticator
+
+        # 📨 Webhooks - Protection HMAC ultra-stricte
+        webhooks:
+            pattern: ^/api/v1/webhooks
+            stateless: true
+            custom_authenticators:
+                - ReportingApi\Infrastructure\Security\WebhookAuthenticator
+                - ReportingApi\Infrastructure\Security\HMACAuthenticator
+            entry_point: ReportingApi\Infrastructure\Security\WebhookAuthenticator
+
+        # 🔐 API Système - Authentification stricte
+        system_api:
+            pattern: ^/api/v1/system
+            stateless: true
+            custom_authenticators:
+                - ReportingApi\Infrastructure\Security\SystemAuthenticator
+            entry_point: ReportingApi\Infrastructure\Security\SystemAuthenticator
+
+        # 📊 API Publique Dashboards - Cache + Rate limiting
+        public_dashboards:
+            pattern: ^/api/v1/dashboards/public
+            stateless: true
+            security: false # Dashboards publics, sécurisé par rate limiting
+
+        # 📊 Interface BI Intégrée - Sessions sécurisées
+        bi_interface:
+            pattern: ^/bi
+            stateless: false
+            custom_authenticators:
+                - lexik_jwt_authentication.jwt_token_authenticator
+                - ReportingApi\Infrastructure\Security\BIInterfaceAuthenticator
+            entry_point: lexik_jwt_authentication.jwt_token_authenticator
+            
+            # 🛡️ Protection contre les attaques par force brute
+            login_throttling:
+                max_attempts: 3
+                interval: '15 minutes'
+
+        # 🔐 API Privée - JWT + API Key intégré security-api
+        api:
+            pattern: ^/api
+            stateless: true
+            custom_authenticators:
+                - lexik_jwt_authentication.jwt_token_authenticator
+                - ReportingApi\Infrastructure\Security\SecurityApiKeyAuthenticator
+            entry_point: lexik_jwt_authentication.jwt_token_authenticator
+
+        # 🌐 Interface Web - Sessions sécurisées
+        main:
+            lazy: true
+            provider: jwt_users
+            custom_authenticators:
+                - lexik_jwt_authentication.jwt_token_authenticator
+            entry_point: lexik_jwt_authentication.jwt_token_authenticator
+            
+            # 🔒 Logout sécurisé
+            logout:
+                path: api_logout
+                target: api_login
+
+    # 🚫 CONTRÔLE D'ACCÈS GRANULAIRE BI
+    access_control:
+        # ✅ Health checks - Libre
+        - { path: ^/(health|ready|metrics), roles: PUBLIC_ACCESS }
+        
+        # 📊 Dashboards publics - Libre (avec rate limiting)
+        - { path: ^/api/v1/dashboards/public, roles: PUBLIC_ACCESS }
+        
+        # 🔄 ETL - Agents autorisés
+        - { path: ^/api/v1/etl, roles: [ROLE_ETL_AGENT, ROLE_SYSTEM] }
+        
+        # 📊 Cubes OLAP - Agents autorisés uniquement
+        - { path: ^/api/v1/cubes, roles: [ROLE_CUBE_BUILDER, ROLE_DATA_GOVERNOR, ROLE_SYSTEM] }
+        
+        # 🔄 Synchronisation - Agents autorisés
+        - { path: ^/api/v1/sync, roles: [ROLE_DATA_SYNC_AGENT, ROLE_SYSTEM] }
+        
+        # 📨 Webhooks - Services autorisés uniquement
+        - { path: ^/api/v1/webhooks, roles: [ROLE_WEBHOOK_RECEIVER, ROLE_SYSTEM] }
+        
+        # 🔐 API Système - Système uniquement
+        - { path: ^/api/v1/system, roles: ROLE_SYSTEM }
+        
+        # 📊 Dashboards Overview - Viewers et plus
+        - { path: ^/api/v1/dashboards, methods: [GET], roles: [ROLE_BI_VIEWER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/dashboards, methods: [POST], roles: [ROLE_BI_BUILDER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/dashboards/[^/]+, methods: [PUT, PATCH], roles: [ROLE_DASHBOARD_MANAGER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/dashboards/[^/]+, methods: [DELETE], roles: [ROLE_BI_ADMIN, ROLE_SYSTEM] }
+        
+        # 📈 Executive Dashboards - C-Level uniquement
+        - { path: ^/api/v1/dashboards/executive, methods: [GET], roles: [ROLE_EXECUTIVE_VIEWER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/dashboards/executive, methods: [POST, PUT, PATCH], roles: [ROLE_BI_ADMIN, ROLE_SYSTEM] }
+        
+        # 📊 Reports - Analysts et plus
+        - { path: ^/api/v1/reports, methods: [GET], roles: [ROLE_BI_ANALYST, ROLE_SYSTEM] }
+        - { path: ^/api/v1/reports, methods: [POST], roles: [ROLE_BI_BUILDER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/reports/[^/]+, methods: [PUT, PATCH], roles: [ROLE_BI_BUILDER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/reports/[^/]+, methods: [DELETE], roles: [ROLE_BI_ADMIN, ROLE_SYSTEM] }
+        
+        # 📅 Scheduled Reports - Schedulers et plus
+        - { path: ^/api/v1/reports/scheduled, methods: [GET], roles: [ROLE_REPORT_SCHEDULER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/reports/scheduled, methods: [POST, PUT, PATCH], roles: [ROLE_REPORT_SCHEDULER, ROLE_SYSTEM] }
+        
+        # 📊 KPIs - Analysts et plus
+        - { path: ^/api/v1/kpis, methods: [GET], roles: [ROLE_KPI_ANALYST, ROLE_SYSTEM] }
+        - { path: ^/api/v1/kpis, methods: [POST, PUT, PATCH], roles: [ROLE_KPI_ANALYST, ROLE_SYSTEM] }
+        
+        # 📈 Charts & Visualizations - Designers et plus
+        - { path: ^/api/v1/charts, methods: [GET], roles: [ROLE_BI_VIEWER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/charts, methods: [POST], roles: [ROLE_CHART_DESIGNER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/charts/[^/]+, methods: [PUT, PATCH], roles: [ROLE_CHART_DESIGNER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/charts/[^/]+, methods: [DELETE], roles: [ROLE_BI_ADMIN, ROLE_SYSTEM] }
+        
+        # 📤 Exports - Export managers et plus
+        - { path: ^/api/v1/exports, methods: [GET], roles: [ROLE_EXPORT_MANAGER, ROLE_SYSTEM] }
+        - { path: ^/api/v1/exports, methods: [POST], roles: [ROLE_EXPORT_MANAGER, ROLE_SYSTEM] }
+        
+        # 📊 Real-time Monitoring - Monitors et plus
+        - { path: ^/api/v1/realtime, methods: [GET], roles: [ROLE_REALTIME_MONITOR, ROLE_SYSTEM] }
+        
+        # 🔒 Data Governance - Data governors uniquement
+        - { path: ^/api/v1/governance, methods: [GET], roles: [ROLE_DATA_GOVERNOR, ROLE_SYSTEM] }
+        - { path: ^/api/v1/governance, methods: [POST, PUT, PATCH], roles: [ROLE_DATA_GOVERNOR, ROLE_SYSTEM] }
+        
+        # 📋 Compliance Reports - Auditors et plus
+        - { path: ^/api/v1/compliance, methods: [GET], roles: [ROLE_COMPLIANCE_AUDITOR, ROLE_SYSTEM] }
+        - { path: ^/api/v1/compliance/reports, methods: [POST], roles: [ROLE_DATA_GOVERNOR, ROLE_SYSTEM] }
+        
+        # 📊 Interface BI - Viewers et plus
+        - { path: ^/bi, roles: [ROLE_BI_VIEWER, ROLE_SYSTEM] }
+        
+        # 🔧 Administration complète - Admins
+        - { path: ^/api/v1/admin, roles: ROLE_ADMIN }
+        
+        # 🛡️ Sécurité - Rôle sécurité
+        - { path: ^/api/v1/security, roles: ROLE_SECURITY }
+        
+        # 🌐 Par défaut - Authentifié
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+        
+        # 🏠 Interface - Libre
+        - { path: ^/, roles: PUBLIC_ACCESS }
+
+    # 🔥 DURCISSEMENT SÉCURITAIRE BI
+    access_decision_manager:
+        strategy: unanimous # 🆕 Toutes les règles doivent être satisfaites
+        allow_if_all_abstain: false
+        allow_if_equal_granted_denied: false 

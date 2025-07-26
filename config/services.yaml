@@ -1,0 +1,451 @@
+# 📊 MÉTRIQUES PROMETHEUS REPORTING-API ULTRA-SPÉCIALISÉES
+services:
+    # 🔧 COLLECTEUR PRINCIPAL DE MÉTRIQUES
+    ReportingApi\Infrastructure\Monitoring\PrometheusCollector:
+        arguments:
+            $registry: '@prometheus_registry'
+        tags:
+            - { name: 'kernel.event_subscriber' }
+
+    # 📈 REGISTRY PROMETHEUS
+    prometheus_registry:
+        class: Prometheus\CollectorRegistry
+        factory: ['Prometheus\CollectorRegistry', 'getDefault']
+
+    # 📊 MÉTRIQUES DASHBOARDS
+    dashboard_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\DashboardMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 📋 MÉTRIQUES REPORTS
+    report_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\ReportMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 📤 MÉTRIQUES EXPORTS
+    export_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\ExportMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 📊 MÉTRIQUES KPI
+    kpi_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\KpiMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 📈 MÉTRIQUES VISUALIZATIONS
+    visualization_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\VisualizationMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 🔄 MÉTRIQUES ETL
+    etl_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\ETLMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 📊 MÉTRIQUES OLAP CUBES
+    cube_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\CubeMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 🔒 MÉTRIQUES DATA GOVERNANCE
+    governance_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\GovernanceMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # ⚡ MÉTRIQUES PERFORMANCE BI
+    bi_performance_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\BiPerformanceMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 🔐 MÉTRIQUES SÉCURITÉ BI
+    bi_security_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\BiSecurityMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+    # 💼 MÉTRIQUES BUSINESS BI
+    business_bi_metrics:
+        class: ReportingApi\Infrastructure\Monitoring\BusinessBiMetrics
+        arguments:
+            $registry: '@prometheus_registry'
+
+# 🎛️ MÉTRIQUES PERSONNALISÉES REPORTING-API
+reporting_api:
+    metrics:
+        # 📊 MÉTRIQUES DASHBOARDS
+        dashboards:
+            dashboards_created_total:
+                type: counter
+                help: "Total des dashboards créés"
+                labels: ['dashboard_type', 'creator_role', 'template_used']
+            
+            dashboard_views_total:
+                type: counter
+                help: "Total des vues de dashboards"
+                labels: ['dashboard_type', 'viewer_role', 'device_type']
+            
+            dashboard_load_duration_seconds:
+                type: histogram
+                help: "Durée de chargement des dashboards"
+                buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
+                labels: ['dashboard_type', 'complexity_level', 'cache_status']
+            
+            active_dashboard_users:
+                type: gauge
+                help: "Utilisateurs actifs sur les dashboards"
+                labels: ['dashboard_type', 'time_window']
+            
+            dashboard_refresh_total:
+                type: counter
+                help: "Total des rafraîchissements de dashboards"
+                labels: ['dashboard_type', 'refresh_mode', 'trigger_type']
+            
+            dashboard_errors_total:
+                type: counter
+                help: "Erreurs de dashboards"
+                labels: ['dashboard_type', 'error_type', 'severity']
+
+        # 📋 MÉTRIQUES REPORTS
+        reports:
+            reports_generated_total:
+                type: counter
+                help: "Total des rapports générés"
+                labels: ['report_type', 'format', 'schedule_type']
+            
+            report_generation_duration_seconds:
+                type: histogram
+                help: "Durée de génération des rapports"
+                buckets: [1, 5, 15, 60, 300, 900, 3600]
+                labels: ['report_type', 'data_size_range', 'complexity']
+            
+            scheduled_reports_total:
+                type: counter
+                help: "Rapports programmés"
+                labels: ['frequency', 'report_type', 'status']
+            
+            report_shares_total:
+                type: counter
+                help: "Partages de rapports"
+                labels: ['share_method', 'recipient_type', 'report_type']
+            
+            report_downloads_total:
+                type: counter
+                help: "Téléchargements de rapports"
+                labels: ['format', 'report_type', 'download_method']
+            
+            report_cache_hit_ratio:
+                type: gauge
+                help: "Ratio de hits cache pour rapports"
+                labels: ['report_type', 'cache_tier']
+
+        # 📤 MÉTRIQUES EXPORTS
+        exports:
+            exports_created_total:
+                type: counter
+                help: "Total des exports créés"
+                labels: ['export_format', 'data_type', 'size_category']
+            
+            export_duration_seconds:
+                type: histogram
+                help: "Durée des exports"
+                buckets: [0.5, 2, 10, 30, 120, 600, 1800]
+                labels: ['export_format', 'record_count_range']
+            
+            export_file_size_bytes:
+                type: histogram
+                help: "Taille des fichiers d'export"
+                buckets: [1024, 10240, 102400, 1048576, 10485760, 104857600]
+                labels: ['export_format', 'compression_type']
+            
+            bulk_exports_total:
+                type: counter
+                help: "Exports en masse"
+                labels: ['trigger_type', 'export_format', 'status']
+            
+            export_failures_total:
+                type: counter
+                help: "Échecs d'export"
+                labels: ['export_format', 'failure_reason', 'retry_count']
+
+        # 📊 MÉTRIQUES KPI
+        kpis:
+            kpis_calculated_total:
+                type: counter
+                help: "Total des KPIs calculés"
+                labels: ['kpi_category', 'calculation_method', 'frequency']
+            
+            kpi_calculation_duration_seconds:
+                type: histogram
+                help: "Durée de calcul des KPIs"
+                buckets: [0.01, 0.1, 0.5, 2.0, 10.0, 60.0]
+                labels: ['kpi_complexity', 'data_source_count']
+            
+            kpi_threshold_violations:
+                type: counter
+                help: "Violations de seuils KPI"
+                labels: ['kpi_name', 'threshold_type', 'severity']
+            
+            active_kpi_monitors:
+                type: gauge
+                help: "Moniteurs KPI actifs"
+                labels: ['monitoring_frequency', 'alert_enabled']
+            
+            kpi_accuracy_score:
+                type: gauge
+                help: "Score de précision des KPIs (0-100)"
+                labels: ['kpi_category', 'validation_method']
+
+        # 📈 MÉTRIQUES VISUALIZATIONS
+        visualizations:
+            charts_rendered_total:
+                type: counter
+                help: "Total des graphiques rendus"
+                labels: ['chart_type', 'data_points_range', 'rendering_mode']
+            
+            chart_rendering_duration_seconds:
+                type: histogram
+                help: "Durée de rendu des graphiques"
+                buckets: [0.05, 0.2, 0.5, 1.0, 3.0, 10.0]
+                labels: ['chart_type', 'data_complexity']
+            
+            interactive_chart_operations:
+                type: counter
+                help: "Opérations interactives sur graphiques"
+                labels: ['operation_type', 'chart_type', 'user_role']
+            
+            chart_customizations_total:
+                type: counter
+                help: "Personnalisations de graphiques"
+                labels: ['customization_type', 'chart_type', 'user_role']
+            
+            chart_errors_total:
+                type: counter
+                help: "Erreurs de rendu de graphiques"
+                labels: ['chart_type', 'error_category', 'browser_type']
+
+        # 🔄 MÉTRIQUES ETL
+        etl:
+            etl_jobs_executed_total:
+                type: counter
+                help: "Total des jobs ETL exécutés"
+                labels: ['job_type', 'source_system', 'status']
+            
+            etl_job_duration_seconds:
+                type: histogram
+                help: "Durée des jobs ETL"
+                buckets: [60, 300, 900, 3600, 14400, 86400]
+                labels: ['job_type', 'data_volume_range']
+            
+            etl_records_processed_total:
+                type: counter
+                help: "Total des enregistrements traités ETL"
+                labels: ['source_system', 'transformation_type', 'status']
+            
+            etl_data_quality_score:
+                type: gauge
+                help: "Score de qualité des données ETL (0-100)"
+                labels: ['source_system', 'data_type']
+            
+            etl_errors_total:
+                type: counter
+                help: "Erreurs ETL"
+                labels: ['job_type', 'error_category', 'source_system']
+
+        # 📊 MÉTRIQUES OLAP CUBES
+        cubes:
+            cubes_built_total:
+                type: counter
+                help: "Total des cubes OLAP construits"
+                labels: ['cube_type', 'dimension_count', 'measure_count']
+            
+            cube_build_duration_seconds:
+                type: histogram
+                help: "Durée de construction des cubes"
+                buckets: [300, 1800, 7200, 21600, 86400]
+                labels: ['cube_size_category', 'aggregation_level']
+            
+            cube_queries_total:
+                type: counter
+                help: "Total des requêtes sur cubes"
+                labels: ['cube_name', 'query_type', 'user_role']
+            
+            cube_query_duration_seconds:
+                type: histogram
+                help: "Durée des requêtes sur cubes"
+                buckets: [0.01, 0.1, 0.5, 2.0, 10.0, 60.0]
+                labels: ['cube_name', 'query_complexity']
+            
+            cube_size_bytes:
+                type: gauge
+                help: "Taille des cubes OLAP en bytes"
+                labels: ['cube_name', 'compression_type']
+            
+            drill_down_operations_total:
+                type: counter
+                help: "Opérations drill-down"
+                labels: ['cube_name', 'drill_level', 'user_role']
+
+        # 🔒 MÉTRIQUES DATA GOVERNANCE
+        governance:
+            data_access_requests_total:
+                type: counter
+                help: "Demandes d'accès aux données"
+                labels: ['data_classification', 'requester_role', 'approval_status']
+            
+            data_masking_operations_total:
+                type: counter
+                help: "Opérations de masquage de données"
+                labels: ['masking_type', 'data_sensitivity', 'user_role']
+            
+            audit_logs_generated_total:
+                type: counter
+                help: "Logs d'audit générés"
+                labels: ['event_type', 'user_role', 'data_classification']
+            
+            compliance_violations_total:
+                type: counter
+                help: "Violations de conformité"
+                labels: ['violation_type', 'regulation', 'severity']
+            
+            data_lineage_traces_total:
+                type: counter
+                help: "Traces de lignage de données"
+                labels: ['source_system', 'transformation_type', 'target_system']
+
+        # ⚡ MÉTRIQUES PERFORMANCE BI
+        performance:
+            http_requests_total:
+                type: counter
+                help: "Total des requêtes HTTP BI"
+                labels: ['method', 'endpoint', 'status']
+            
+            http_request_duration_seconds:
+                type: histogram
+                help: "Durée des requêtes HTTP BI"
+                buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0]
+                labels: ['method', 'endpoint', 'data_complexity']
+            
+            database_query_duration_seconds:
+                type: histogram
+                help: "Durée des requêtes DB BI"
+                buckets: [0.001, 0.01, 0.1, 0.5, 2.0, 10.0, 60.0]
+                labels: ['query_type', 'table_count', 'result_size']
+            
+            cache_operations_total:
+                type: counter
+                help: "Opérations cache BI"
+                labels: ['operation', 'cache_type', 'success']
+            
+            cache_hit_ratio:
+                type: gauge
+                help: "Ratio de hits cache BI"
+                labels: ['cache_type', 'data_category']
+            
+            memory_usage_bytes:
+                type: gauge
+                help: "Utilisation mémoire BI"
+                labels: ['component', 'process_type']
+            
+            concurrent_users:
+                type: gauge
+                help: "Utilisateurs simultanés BI"
+                labels: ['user_type', 'session_type']
+
+        # 🔐 MÉTRIQUES SÉCURITÉ BI
+        security:
+            authentication_attempts_total:
+                type: counter
+                help: "Tentatives d'authentification BI"
+                labels: ['auth_method', 'result', 'user_role']
+            
+            authorization_checks_total:
+                type: counter
+                help: "Vérifications d'autorisation BI"
+                labels: ['resource_type', 'permission_level', 'result']
+            
+            suspicious_activities_detected:
+                type: counter
+                help: "Activités suspectes détectées BI"
+                labels: ['activity_type', 'severity', 'detection_method']
+            
+            rate_limit_hits:
+                type: counter
+                help: "Dépassements de rate limiting BI"
+                labels: ['limiter_type', 'endpoint', 'severity']
+            
+            data_access_violations:
+                type: counter
+                help: "Violations d'accès aux données"
+                labels: ['violation_type', 'data_sensitivity', 'user_role']
+            
+            security_incidents_total:
+                type: counter
+                help: "Incidents de sécurité BI"
+                labels: ['incident_type', 'severity', 'response_time_category']
+
+        # 💼 MÉTRIQUES BUSINESS BI
+        business:
+            business_value_generated_euros:
+                type: gauge
+                help: "Valeur business générée par BI (EUR)"
+                labels: ['value_category', 'time_period', 'department']
+            
+            decision_making_speed_improvement:
+                type: gauge
+                help: "Amélioration vitesse prise de décision (%)"
+                labels: ['decision_category', 'management_level']
+            
+            data_driven_decisions_total:
+                type: counter
+                help: "Décisions basées sur les données"
+                labels: ['decision_category', 'confidence_level', 'outcome']
+            
+            user_adoption_rate:
+                type: gauge
+                help: "Taux d'adoption utilisateur BI (%)"
+                labels: ['user_category', 'feature_type']
+            
+            roi_percentage:
+                type: gauge
+                help: "ROI de la plateforme BI (%)"
+                labels: ['calculation_method', 'time_period']
+            
+            cost_savings_euros:
+                type: gauge
+                help: "Économies réalisées grâce à BI (EUR)"
+                labels: ['savings_category', 'department']
+
+        # 🌐 MÉTRIQUES SYSTÈME
+        system:
+            uptime_seconds:
+                type: counter
+                help: "Uptime du service BI"
+            
+            health_checks_total:
+                type: counter
+                help: "Vérifications de santé BI"
+                labels: ['endpoint', 'status']
+            
+            message_bus_operations:
+                type: counter
+                help: "Opérations message bus BI"
+                labels: ['operation', 'success']
+            
+            bi_workers_active:
+                type: gauge
+                help: "Workers BI actifs"
+                labels: ['worker_type', 'queue']
+            
+            data_freshness_seconds:
+                type: gauge
+                help: "Fraîcheur des données (secondes)"
+                labels: ['data_source', 'update_frequency'] 
