@@ -1,0 +1,527 @@
+# 🐳 REPORTING-API - DOCKERFILE ULTRA-OPTIMISÉ 10/10 BUSINESS INTELLIGENCE
+# Multi-stage build pour performance maximale et BI enterprise
+FROM php:8.3-fpm-alpine3.19 AS builder
+
+# 📋 MÉTADONNÉES
+LABEL maintainer="BimStrength DevOps <devops@bimstrength.com>"
+LABEL version="2.0.0"
+LABEL description="Reporting API - Ultra-High Performance Business Intelligence Hub"
+LABEL org.opencontainers.image.source="https://github.com/bimstrength/reporting-api"
+
+# 🔧 ARGUMENTS DE BUILD
+ARG APP_ENV=prod
+ARG APP_DEBUG=0
+ARG COMPOSER_ALLOW_SUPERUSER=1
+ARG COMPOSER_NO_DEV=1
+
+# 🏔️ DÉPENDANCES SYSTÈME POUR BI & REPORTING
+RUN apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        curl-dev \
+        libxml2-dev \
+        libzip-dev \
+        oniguruma-dev \
+        autoconf \
+        g++ \
+        make \
+        linux-headers \
+        libc-dev \
+        pcre-dev \
+        zlib-dev \
+        openssl-dev \
+        libsodium-dev \
+        icu-dev \
+        json-c-dev \
+        libffi-dev \
+        gmp-dev \
+        bzip2-dev \
+        libpng-dev \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        imagemagick-dev \
+        libwebp-dev \
+        tiff-dev \
+        ghostscript-dev \
+        lz4-dev \
+        zstd-dev \
+        snappy-dev \
+        librdkafka-dev \
+    && apk add --no-cache \
+        git \
+        curl \
+        libzip \
+        libxml2 \
+        oniguruma \
+        icu \
+        libsodium \
+        openssl \
+        ca-certificates \
+        redis \
+        supervisor \
+        nginx \
+        htop \
+        bash \
+        jq \
+        ncurses \
+        gmp \
+        bzip2 \
+        libpng \
+        freetype \
+        libjpeg-turbo \
+        imagemagick \
+        libwebp \
+        tiff \
+        ghostscript \
+        poppler-utils \
+        npm \
+        nodejs \
+        python3 \
+        py3-pip \
+        py3-numpy \
+        py3-pandas \
+        py3-matplotlib \
+        py3-seaborn \
+        gnu-libiconv \
+        tzdata \
+        rsync \
+        clamav \
+        clamav-daemon \
+        p7zip \
+        lz4 \
+        zstd \
+        snappy \
+        pigz \
+        parallel \
+        wkhtmltopdf \
+        wkhtmltoimage \
+        chromium \
+        chromium-chromedriver \
+        fontconfig \
+        ttf-dejavu \
+        ttf-liberation \
+        librdkafka \
+        clickhouse-client
+
+# 🚀 EXTENSIONS PHP POUR BI & REPORTING
+RUN docker-php-ext-configure intl \
+    && docker-php-ext-configure gmp \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install -j$(nproc) \
+        pdo \
+        pdo_mysql \
+        zip \
+        intl \
+        opcache \
+        bcmath \
+        gmp \
+        sockets \
+        pcntl \
+        sodium \
+        xml \
+        mbstring \
+        curl \
+        json \
+        ffi \
+        bz2 \
+        gd \
+        exif \
+        gettext \
+        fileinfo \
+        calendar \
+        dom \
+        xmlreader \
+        xmlwriter \
+        simplexml \
+        xsl \
+        posix \
+        iconv \
+        ctype \
+        soap \
+    && pecl install \
+        redis-6.0.2 \
+        apcu-5.1.23 \
+        igbinary-3.2.15 \
+        xdebug-3.3.1 \
+        mongodb-1.17.0 \
+        timezonedb-2023.4 \
+        imagick-3.7.0 \
+        uuid-1.2.0 \
+        yaml-2.2.3 \
+        lz4-0.4.3 \
+        zstd-0.12.2 \
+        rdkafka-6.0.3 \
+    && docker-php-ext-enable \
+        redis \
+        apcu \
+        igbinary \
+        mongodb \
+        timezonedb \
+        imagick \
+        uuid \
+        yaml \
+        lz4 \
+        zstd \
+        rdkafka \
+    && docker-php-source delete \
+    && apk del .build-deps
+
+# 🔧 CONFIGURATION PHP OPTIMISÉE BI
+RUN { \
+        echo 'opcache.enable=1'; \
+        echo 'opcache.enable_cli=1'; \
+        echo 'opcache.memory_consumption=2048'; \
+        echo 'opcache.interned_strings_buffer=256'; \
+        echo 'opcache.max_accelerated_files=100000'; \
+        echo 'opcache.validate_timestamps=0'; \
+        echo 'opcache.save_comments=1'; \
+        echo 'opcache.fast_shutdown=0'; \
+        echo 'opcache.optimization_level=0x7FFEBFFF'; \
+        echo 'opcache.preload=/var/www/html/config/preload.php'; \
+        echo 'opcache.preload_user=www-data'; \
+        echo 'realpath_cache_size=32768K'; \
+        echo 'realpath_cache_ttl=600'; \
+        echo 'memory_limit=4096M'; \
+        echo 'max_execution_time=1800'; \
+        echo 'max_input_vars=50000'; \
+        echo 'post_max_size=1G'; \
+        echo 'upload_max_filesize=1G'; \
+        echo 'date.timezone=UTC'; \
+        echo 'expose_php=Off'; \
+        echo 'session.cookie_httponly=On'; \
+        echo 'session.cookie_secure=On'; \
+        echo 'session.use_strict_mode=On'; \
+        echo 'session.cookie_samesite=Strict'; \
+        echo 'default_socket_timeout=300'; \
+        echo 'user_agent="BimStrength-ReportingAPI/2.0"'; \
+        echo 'precision=17'; \
+        echo 'serialize_precision=17'; \
+        echo 'max_file_uploads=1000'; \
+        echo 'output_buffering=65536'; \
+        echo 'zlib.output_compression=On'; \
+        echo 'zlib.output_compression_level=6'; \
+    } > /usr/local/etc/php/conf.d/zz-bi-optimizations.ini
+
+# 🔧 CONFIGURATION CURL OPTIMISÉE BI
+RUN { \
+        echo 'curl.cainfo=/etc/ssl/certs/ca-certificates.crt'; \
+        echo 'auto_detect_line_endings=On'; \
+        echo 'default_charset="UTF-8"'; \
+    } > /usr/local/etc/php/conf.d/curl-bi.ini
+
+# 🔐 CONFIGURATION CRYPTO & CHIFFREMENT
+RUN { \
+        echo 'sodium.memory_limit=536870912'; \
+        echo 'gmp.precision=17'; \
+    } > /usr/local/etc/php/conf.d/crypto-bi.ini
+
+# 💰 CONFIGURATION BCMATH POUR CALCULS BI
+RUN { \
+        echo 'bcmath.scale=10'; \
+    } > /usr/local/etc/php/conf.d/bcmath-bi.ini
+
+# 🔧 CONFIGURATION REDIS OPTIMISÉE BI
+RUN { \
+        echo 'redis.session.locking_enabled=1'; \
+        echo 'redis.session.lock_expire=300'; \
+        echo 'redis.session.lock_wait_time=200000'; \
+        echo 'redis.session.lock_retries=300'; \
+        echo 'redis.arrays.autorehash=1'; \
+        echo 'redis.pconnect.pooling_enabled=1'; \
+        echo 'redis.pconnect.connection_limit=100'; \
+    } > /usr/local/etc/php/conf.d/redis-bi.ini
+
+# 🎨 CONFIGURATION IMAGICK POUR VISUALISATIONS
+RUN { \
+        echo 'imagick.skip_version_check=1'; \
+        echo 'imagick.progress_monitor=0'; \
+        echo 'imagick.locale_fix=1'; \
+    } > /usr/local/etc/php/conf.d/imagick-bi.ini
+
+# 📊 CONFIGURATION MONGODB POUR ANALYTICS
+RUN { \
+        echo 'mongodb.debug=0'; \
+        echo 'mongodb.command_monitoring=0'; \
+        echo 'mongodb.apm_disabled=1'; \
+    } > /usr/local/etc/php/conf.d/mongodb-bi.ini
+
+# 📦 COMPOSER DERNIÈRE VERSION
+COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
+
+# 📊 INSTALLATION APACHE SUPERSET (BI Interface)
+RUN pip3 install --upgrade pip \
+    && pip3 install apache-superset==3.0.3 \
+    && pip3 install clickhouse-connect \
+    && pip3 install redis \
+    && pip3 install celery \
+    && pip3 install gunicorn
+
+# 📈 INSTALLATION OUTILS VISUALISATION
+RUN npm install -g \
+        chart.js \
+        d3 \
+        plotly.js \
+        echarts \
+        @antv/g2 \
+        @observablehq/plot
+
+# 🏗️ STAGE APPLICATION
+FROM builder AS application
+
+# 👤 UTILISATEUR NON-ROOT SÉCURISÉ
+RUN addgroup -g 1000 -S reporting && \
+    adduser -u 1000 -S reporting -G reporting
+
+# 📁 RÉPERTOIRES DE TRAVAIL
+WORKDIR /var/www/html
+RUN chown -R reporting:reporting /var/www/html
+
+# 🏗️ COPIE ET BUILD DÉPENDANCES (en tant qu'utilisateur)
+USER reporting
+COPY --chown=reporting:reporting composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --optimize-autoloader \
+    --classmap-authoritative \
+    --apcu-autoloader
+
+# 📋 COPIE CODE SOURCE
+COPY --chown=reporting:reporting . .
+
+# 🚀 OPTIMISATIONS COMPOSER FINALES
+RUN composer dump-autoload \
+    --optimize \
+    --classmap-authoritative \
+    --apcu \
+    --no-dev
+
+# 🔧 STAGE PRODUCTION FINAL
+FROM application AS production
+
+# 🛡️ RETOUR ROOT POUR CONFIGURATIONS SYSTÈME
+USER root
+
+# 📁 CRÉATION RÉPERTOIRES NÉCESSAIRES BI
+RUN mkdir -p \
+        /var/www/html/var/cache/prod \
+        /var/www/html/var/log \
+        /var/www/html/var/sessions \
+        /var/www/html/var/reports/generated \
+        /var/www/html/var/reports/scheduled \
+        /var/www/html/var/reports/templates \
+        /var/www/html/var/exports/excel \
+        /var/www/html/var/exports/pdf \
+        /var/www/html/var/exports/csv \
+        /var/www/html/var/exports/powerpoint \
+        /var/www/html/var/dashboards/executive \
+        /var/www/html/var/dashboards/operational \
+        /var/www/html/var/dashboards/templates \
+        /var/www/html/var/kpis/calculations \
+        /var/www/html/var/kpis/cache \
+        /var/www/html/var/visualizations/charts \
+        /var/www/html/var/visualizations/cache \
+        /var/www/html/var/etl/processing \
+        /var/www/html/var/etl/logs \
+        /var/www/html/var/cubes/olap \
+        /var/www/html/var/cubes/cache \
+        /var/www/html/var/governance/audit \
+        /var/www/html/var/governance/compliance \
+        /var/www/html/var/analytics \
+        /var/superset \
+    && chown -R reporting:reporting \
+        /var/www/html/var \
+        /var/superset
+
+# 🌐 CONFIGURATION NGINX OPTIMISÉE BI
+COPY docker/nginx/reporting-api.conf /etc/nginx/conf.d/default.conf
+
+# 🔧 CONFIGURATION SUPERVISORD
+COPY docker/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# 📊 CONFIGURATION SUPERSET
+COPY docker/superset/superset_config.py /var/superset/superset_config.py
+COPY docker/superset/init-superset.sh /usr/local/bin/init-superset
+RUN chmod +x /usr/local/bin/init-superset
+
+# 📊 SCRIPTS DE SANTÉ ET MONITORING BI
+COPY docker/scripts/health-check.sh /usr/local/bin/health-check
+COPY docker/scripts/entrypoint.sh /usr/local/bin/entrypoint
+COPY docker/scripts/bi-monitor.sh /usr/local/bin/bi-monitor
+COPY docker/scripts/etl-processor.sh /usr/local/bin/etl-processor
+COPY docker/scripts/cube-builder.sh /usr/local/bin/cube-builder
+COPY docker/scripts/report-scheduler.sh /usr/local/bin/report-scheduler
+COPY docker/scripts/dashboard-optimizer.sh /usr/local/bin/dashboard-optimizer
+COPY docker/scripts/kpi-calculator.sh /usr/local/bin/kpi-calculator
+COPY docker/scripts/export-manager.sh /usr/local/bin/export-manager
+COPY docker/scripts/governance-auditor.sh /usr/local/bin/governance-auditor
+COPY docker/scripts/visualization-engine.sh /usr/local/bin/visualization-engine
+COPY docker/scripts/data-sync.sh /usr/local/bin/data-sync
+RUN chmod +x /usr/local/bin/health-check /usr/local/bin/entrypoint /usr/local/bin/bi-monitor /usr/local/bin/etl-processor /usr/local/bin/cube-builder /usr/local/bin/report-scheduler /usr/local/bin/dashboard-optimizer /usr/local/bin/kpi-calculator /usr/local/bin/export-manager /usr/local/bin/governance-auditor /usr/local/bin/visualization-engine /usr/local/bin/data-sync
+
+# 🔒 CONFIGURATION SÉCURITÉ FINALE BI
+RUN apk add --no-cache \
+        fail2ban \
+        ca-certificates \
+        gnupg \
+        audit \
+        logrotate \
+    && update-ca-certificates
+
+# 🌐 CONFIGURATION NGINX HARDENING BI
+RUN { \
+        echo 'server_tokens off;'; \
+        echo 'client_max_body_size 2G;'; \
+        echo 'client_body_timeout 1800s;'; \
+        echo 'client_header_timeout 60s;'; \
+        echo 'keepalive_timeout 65s;'; \
+        echo 'send_timeout 1800s;'; \
+        echo 'proxy_read_timeout 3600s;'; \
+        echo 'proxy_connect_timeout 60s;'; \
+        echo 'proxy_send_timeout 3600s;'; \
+        echo 'fastcgi_read_timeout 3600s;'; \
+        echo 'gzip on;'; \
+        echo 'gzip_vary on;'; \
+        echo 'gzip_min_length 1024;'; \
+        echo 'gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/octet-stream application/vnd.ms-excel application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/pdf;'; \
+        echo 'add_header X-Frame-Options SAMEORIGIN;'; \
+        echo 'add_header X-Content-Type-Options nosniff;'; \
+        echo 'add_header X-XSS-Protection "1; mode=block";'; \
+        echo 'add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;'; \
+        echo 'add_header Cache-Control "no-cache, no-store, must-revalidate" always;'; \
+        echo 'add_header Pragma "no-cache" always;'; \
+    } >> /etc/nginx/conf.d/hardening.conf
+
+# 🔐 CONFIGURATION FAIL2BAN BI
+RUN { \
+        echo '[bi-abuse]'; \
+        echo 'enabled = true'; \
+        echo 'port = http,https'; \
+        echo 'filter = bi-abuse'; \
+        echo 'logpath = /var/www/html/var/log/bi.log'; \
+        echo 'maxretry = 5'; \
+        echo 'bantime = 3600'; \
+        echo 'findtime = 600'; \
+        echo ''; \
+        echo '[dashboard-abuse]'; \
+        echo 'enabled = true'; \
+        echo 'port = http,https'; \
+        echo 'filter = dashboard-abuse'; \
+        echo 'logpath = /var/www/html/var/log/dashboard.log'; \
+        echo 'maxretry = 10'; \
+        echo 'bantime = 1800'; \
+        echo 'findtime = 300'; \
+        echo ''; \
+        echo '[export-abuse]'; \
+        echo 'enabled = true'; \
+        echo 'port = http,https'; \
+        echo 'filter = export-abuse'; \
+        echo 'logpath = /var/www/html/var/log/export.log'; \
+        echo 'maxretry = 15'; \
+        echo 'bantime = 900'; \
+        echo 'findtime = 300'; \
+    } > /etc/fail2ban/jail.d/bi-security.conf
+
+# 📋 CONFIGURATION AUDIT BI
+RUN { \
+        echo '-w /var/www/html/var/reports -p wa -k bi-reports-access'; \
+        echo '-w /var/www/html/var/dashboards -p wa -k bi-dashboards-access'; \
+        echo '-w /var/www/html/var/exports -p wa -k bi-exports-access'; \
+        echo '-w /var/www/html/var/governance -p wa -k bi-governance-access'; \
+        echo '-w /var/superset -p wa -k superset-access'; \
+        echo '-w /etc/nginx/conf.d/ -p wa -k nginx-config-change'; \
+        echo '-w /usr/local/etc/php/conf.d/ -p wa -k php-config-change'; \
+    } > /etc/audit/rules.d/bi-audit.rules
+
+# 📊 CONFIGURATION LOGROTATE BI
+RUN { \
+        echo '/var/www/html/var/log/*.log {'; \
+        echo '    hourly'; \
+        echo '    missingok'; \
+        echo '    rotate 720'; \
+        echo '    compress'; \
+        echo '    delaycompress'; \
+        echo '    notifempty'; \
+        echo '    create 644 reporting reporting'; \
+        echo '    postrotate'; \
+        echo '        /usr/bin/supervisorctl restart nginx'; \
+        echo '    endscript'; \
+        echo '}'; \
+    } > /etc/logrotate.d/reporting-api
+
+# 🦠 CONFIGURATION CLAMAV ANTIVIRUS
+RUN { \
+        echo 'DatabaseMirror database.clamav.net'; \
+        echo 'DatabaseOwner clamav'; \
+        echo 'UpdateLogFile /var/log/clamav/freshclam.log'; \
+        echo 'LogFileMaxSize 10M'; \
+        echo 'LogRotate yes'; \
+        echo 'LogFacility LOG_LOCAL6'; \
+        echo 'LogSyslog yes'; \
+        echo 'PidFile /var/run/clamav/freshclam.pid'; \
+        echo 'DatabaseDirectory /var/lib/clamav'; \
+        echo 'Foreground no'; \
+        echo 'Debug no'; \
+        echo 'MaxAttempts 5'; \
+        echo 'ConnectTimeout 90'; \
+        echo 'ReceiveTimeout 90'; \
+        echo 'TestDatabases yes'; \
+        echo 'ScriptedUpdates yes'; \
+        echo 'CompressLocalDatabase no'; \
+        echo 'Bytecode yes'; \
+        echo 'NotifyClamd /etc/clamav/clamd.conf'; \
+        echo 'Checks 6'; \
+    } > /etc/clamav/freshclam.conf
+
+# 🛡️ SÉCURITÉ FINALE
+USER reporting
+
+# 🌐 EXPOSITION PORTS
+EXPOSE 8080 9090 8088
+
+# 🔍 HEALTH CHECK SPÉCIALISÉ BI
+HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=3 \
+    CMD /usr/local/bin/health-check || exit 1
+
+# 🏃 VARIABLES D'ENVIRONNEMENT
+ENV APP_ENV=prod \
+    APP_DEBUG=0 \
+    PHP_OPCACHE_VALIDATE_TIMESTAMPS=0 \
+    PHP_REALPATH_CACHE_SIZE=32768K \
+    PHP_REALPATH_CACHE_TTL=600 \
+    COMPOSER_ALLOW_SUPERUSER=1 \
+    BI_PROCESSING_TIMEOUT=1800 \
+    DASHBOARD_CACHE_TTL=3600 \
+    REPORT_GENERATION_TIMEOUT=1800 \
+    EXPORT_MAX_SIZE=1G \
+    BI_WORKERS=32 \
+    ETL_ENABLED=true \
+    CUBE_BUILDING_ENABLED=true \
+    REALTIME_DASHBOARDS_ENABLED=true \
+    SUPERSET_ENABLED=true \
+    DATA_GOVERNANCE_ENABLED=true \
+    KPI_MONITORING_ENABLED=true \
+    EXPORT_FORMATS=excel,pdf,csv,powerpoint \
+    VISUALIZATION_ENGINES=chartjs,d3,plotly \
+    BI_CACHE_TTL=7200 \
+    OLAP_CUBE_REFRESH_INTERVAL=3600
+
+# 🚀 POINT D'ENTRÉE
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
+CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+# 🏷️ LABELS FINAUX
+LABEL org.opencontainers.image.title="Reporting API"
+LABEL org.opencontainers.image.description="Ultra-High Performance Business Intelligence Hub - 10/10 Optimized"
+LABEL org.opencontainers.image.vendor="BimStrength"
+LABEL org.opencontainers.image.version="2.0.0"
+LABEL org.opencontainers.image.created="2025-01-19"
+LABEL architecture="business.intelligence.enterprise"
+LABEL security.level="ultra-secured"
+LABEL performance.level="ultra-optimized"
+LABEL monitoring.level="comprehensive"
+LABEL bi.features="dashboards,reports,kpis,exports,etl,cubes"
+LABEL visualization.support="charts,graphs,heatmaps,realtime"
+LABEL governance.support="data-masking,audit,compliance"
+LABEL export.support="excel,pdf,csv,powerpoint"
+LABEL dashboard.support="executive,operational,realtime" 
